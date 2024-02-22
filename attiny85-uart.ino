@@ -149,29 +149,34 @@ void setup() {
     pinMode(2, INPUT); //PB4
 }
 
+long startTime = millis();
+
 void loop() {
-    //default 10 bit
-    short hallSensorVal = analogRead(2); //2 is pb4
-    int lengthOfVal = 0;
-    if(hallSensorVal < 10){
-      lengthOfVal = 1;
-    } else if(hallSensorVal < 100){
-      lengthOfVal = 2;
-    } else if(hallSensorVal < 1000){
-      lengthOfVal = 3;
-    } else {
-      lengthOfVal = 4;
+    //never ever use delay() ;-)
+    if(millis() - startTime > 20){
+      startTime = millis();
+      //default 10 bit
+      short hallSensorVal = analogRead(2); //2 is pb4
+      int lengthOfVal = 0;
+      if(hallSensorVal < 10){
+        lengthOfVal = 1;
+      } else if(hallSensorVal < 100){
+        lengthOfVal = 2;
+      } else if(hallSensorVal < 1000){
+        lengthOfVal = 3;
+      } else {
+        lengthOfVal = 4;
+      }
+  
+      char message[lengthOfVal+2]; //length should be exactly as numbers
+      sprintf(message, "%i", hallSensorVal); 
+      char terminator[2] = "\n";
+      strcat(message, terminator);  // Concatenate str2 to result
+      
+      uint8_t len = sizeof(message)-1;
+      for (uint8_t i = 0; i<len; i++)
+          usiserial_send_byte(message[i]);
+      while (!usiserial_send_available()) {}    // Wait for last send to complete
     }
-
-    char message[lengthOfVal+2]; //length should be exactly as numbers
-    sprintf(message, "%i", hallSensorVal); 
-    char terminator[2] = "\n";
-    strcat(message, terminator);  // Concatenate str2 to result
     
-    uint8_t len = sizeof(message)-1;
-    for (uint8_t i = 0; i<len; i++)
-        usiserial_send_byte(message[i]);
-    while (!usiserial_send_available()) {}    // Wait for last send to complete
-
-    delay(20);
 }
