@@ -1,16 +1,14 @@
 /*  
- Author: Mark Osborne, BecomingMaker.com
- See accompanying post http://becomingmaker.com/
- 
- An example of USI Serial Send for ATtiny25/45/85.
- Sends a text message every second.
+ Reads out a Hall Sensor 49E from PB4 and forwards the hall sensor readings via USI/ UART
+
+ UART VIA USI implementation from -> Author: Mark Osborne, BecomingMaker.com
    
   ATTiny85 Hookup
 
-  RESET -|1 v 8|- Vcc
-    PB3 -|2   7|- PB2/SCK
-    PB4 -|3   6|- PB1/MISO/DO
-    GND -|4 _ 5|- PB0/MOSI/SDA
+                 RESET -|1 v 8|- Vcc         --> to 3.3V+/ HALL VIN
+                   PB3 -|2   7|- PB2/SCK
+HALL SENSOR OUT    PB4 -|3   6|- PB1/MISO/DO --> UART LINE TO ESP32
+HALL GND/ESP32 GND GND -|4 _ 5|- PB0/MOSI/SDA
 
 ATTiny85 PB1/MISO/DO = Serial UART Tx -> connect to Rx of serial output device
 */
@@ -155,9 +153,10 @@ void loop() {
     //never ever use delay() ;-)
     if(millis() - startTime > 20){
       startTime = millis();
-      //default 10 bit
+      //default 10 bit 0 - 1023
       short hallSensorVal = analogRead(2); //2 is pb4
       int lengthOfVal = 0;
+     //determine dynamic length of string to transmit via UART
       if(hallSensorVal < 10){
         lengthOfVal = 1;
       } else if(hallSensorVal < 100){
@@ -168,10 +167,10 @@ void loop() {
         lengthOfVal = 4;
       }
   
-      char message[lengthOfVal+2]; //length should be exactly as numbers
+      char message[lengthOfVal+2]; //length should be exactly as the hall sensor reading value + 2 chars for terminator characters
       sprintf(message, "%i", hallSensorVal); 
       char terminator[2] = "\n";
-      strcat(message, terminator);  // Concatenate str2 to result
+      strcat(message, terminator);
       
       uint8_t len = sizeof(message)-1;
       for (uint8_t i = 0; i<len; i++)
